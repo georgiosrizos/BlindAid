@@ -1,5 +1,5 @@
 # BlindAid
-Code and documentation repository for the BBC micro:bit group project (Imperial College, HiPEDS, 2017 cohort) 
+Code and documentation repository for the 3-week BBC micro:bit group project (Imperial College, HiPEDS, 2017 cohort) 
 
 Work done by: Dan Iorga, Georgios Rizos, Georgios Rafail Theodorakis, Johannes Wiebe and Thomas Uriot.
 
