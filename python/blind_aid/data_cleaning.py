@@ -14,6 +14,13 @@ from scipy.signal import gaussian
 from scipy.ndimage import filters
 
 
+def read_csv(filepath, column_names):
+    data_df = pd.read_csv(filepath, names=column_names, header=None)
+    data = data_df.values
+
+    return data_df, data
+
+
 def read_csv_and_filter_missing(filepath, column_names):
     data_df = pd.read_csv(filepath, names=column_names, header=None)
 

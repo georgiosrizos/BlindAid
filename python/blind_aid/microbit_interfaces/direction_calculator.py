@@ -16,7 +16,7 @@ import signal
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
 
-from python.blind_aid import utility
+from python.blind_aid import data_cleaning, utility
 
 old_sent_timestamp = time.time()
 
@@ -40,17 +40,14 @@ if __name__ == "__main__":
     ####################################################################################################################
     # Define data filepaths.
     ####################################################################################################################
-
-    # data_folder = "/home/gr912/Documents/PycharmProjects/BlindAid/blind_aid/big_measurement"
-    data_folder = "C:/Users/george/PycharmProjects/BlindAid/blind_aid/big_measurement"
+    data_folder = utility.get_package_path() + "/datasets"
 
     filenames = os.listdir(data_folder)
 
-    ml_approach_filepaths = [data_folder + "/" + filename for filename in filenames if "labels" in filename]
-    trajectory_approach_filepaths = [data_folder + "/" + filename for filename in filenames if "w_sonar" in filename]
-    video_approach_filepaths = [data_folder + "/" + filename for filename in filenames if "video" in filename]
+    ml_approach_filepaths = [data_folder + "/" + filename for filename in filenames if "position" in filename]
+    trajectory_approach_filepaths = [data_folder + "/" + filename for filename in filenames if "trajectory" in filename]
 
-    column_names = get_column_names()
+    column_names = utility.get_column_names()
 
     ####################################################################################################################
     # Train point-based machine learning model.
@@ -59,10 +56,10 @@ if __name__ == "__main__":
     list_of_labels = list()
     label = 0
 
-    features_names = get_all_features_names()
+    features_names = utility.get_all_features_names()
 
     for i, filepath in enumerate(sorted(ml_approach_filepaths)):
-        data_df, data = read_csv_and_filter_missing(filepath, column_names)
+        data_df, data = data_cleaning.read_csv_and_filter_missing(filepath, column_names)
         data_df = data_df[features_names]
         data = data_df.values
 
@@ -111,20 +108,20 @@ if __name__ == "__main__":
     ####################################################################################################################
     # Train trajectory-based machine learning model.
     ####################################################################################################################
-    features_names = get_all_features_names()
+    features_names = utility.get_all_features_names()
     print(len(features_names))
     list_of_data = list()
     list_of_labels = list()
     for i, filepath in enumerate(trajectory_approach_filepaths):
-        data_df, data = read_csv_and_filter_missing(filepath, column_names)
+        data_df, data = data_cleaning.read_csv_and_filter_missing(filepath, column_names)
 
         data = data_df.values
 
         # Construct the compass labels.
 
         compass_labels = np.empty((data.shape[0], 2), dtype=np.float32)
-        compass_labels[:, 0] = np.flip(gaussian_filtering_causal(np.flip(data_df["compass_x"].values, axis=0)), axis=0)
-        compass_labels[:, 1] = np.flip(gaussian_filtering_causal(np.flip(data_df["compass_y"].values, axis=0)), axis=0)
+        compass_labels[:, 0] = np.flip(data_cleaning.gaussian_filtering_causal(np.flip(data_df["compass_x"].values, axis=0)), axis=0)
+        compass_labels[:, 1] = np.flip(data_cleaning.gaussian_filtering_causal(np.flip(data_df["compass_y"].values, axis=0)), axis=0)
         list_of_labels.append(compass_labels)
 
         # Augment features using point-based model.
@@ -133,7 +130,7 @@ if __name__ == "__main__":
 
         # Filter data.
         for j in range(data.shape[1]):
-            data[:, j] = gaussian_filtering(data[:, j])
+            data[:, j] = data_cleaning.gaussian_filtering(data[:, j])
 
         position_pred = point_based_model.predict(data)
         augmented_data = np.hstack([data, position_pred])
@@ -174,7 +171,7 @@ if __name__ == "__main__":
                                           14,
                                           15], dtype=np.int32)
 
-    features_names = get_all_features_names()
+    features_names = utility.get_all_features_names()
 
     direction_list = list()
     direction_counter = 0
@@ -234,13 +231,13 @@ if __name__ == "__main__":
                 ########################################################################################################
                 # Get the most recent data.
                 X = np.vstack(meas_list[-15:])
-                X_df, X = filter_missing(X, column_names)
+                X_df, X = data_cleaning.filter_missing(X, column_names)
                 X_df = X_df[features_names]
                 X = X_df.values
 
                 # Filter data.
                 for j in range(X.shape[1]):
-                    X[:, j] = gaussian_filtering(X[:, j])
+                    X[:, j] = data_cleaning.gaussian_filtering(X[:, j])
 
                 # Augment data with the point-based model.
                 position_pred = point_based_model.predict(X[-2:, :])
